@@ -1,0 +1,121 @@
+---
+title: "Model Selection_Revised"
+author: "Vineed"
+date: "3/1/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(ISLR)
+fix(Hitters)
+
+sum(is.na(Hitters))
+
+Hitters <- na.omit(Hitters)
+
+library(leaps)
+
+best.model <- regsubsets(Salary~., data = Hitters, nvmax = ncol(Hitters))
+
+summary(best.model)
+
+best.model.summary <- summary(best.model)
+names(best.model.summary)
+
+best.model.summary$rsq
+plot(best.model.summary$adjr2)
+```
+All the below points are made with summary object
+
+```{r}
+par(mfrow = c(2,2))
+
+plot(best.model.summary$rss, xlab = "No. of Variables", 
+     ylab = "RSS", type = "l")
+which.min(best.model.summary$rss)
+points(19,best.model.summary$rss[19], col = "red", pch = 19, cex = 1)
+
+plot(best.model.summary$adjr2,xlab = "No. of Variables", 
+     ylab = "Adj. Rsq", type = "l" )
+which.max(best.model.summary$adjr2)
+points(11,best.model.summary$adjr2[11], col = "red", pch = 19, cex = 1)
+
+plot(best.model.summary$bic, xlab = "No. of Variables", ylab = "BIC",
+     type = 'l')
+which.min(best.model.summary$bic)
+points(6,best.model.summary$bic[6], col = "red", pch = 19, cex = 1)
+
+plot(best.model.summary$cp, xlab = "No. of Variables", ylab = "Cp",
+     type = 'l')
+which.min(best.model.summary$cp)
+points(10,best.model.summary$cp[10], col = "red", pch = 19, cex = 1)
+```
+
+We can use the plot objects in the model developed as shown below
+```{r}
+plot(best.model, scale = "r2")
+plot(best.model, scale = "adjr2")
+plot(best.model, scale = "bic")
+plot(best.model, scale = "Cp")
+```
+To get coeffients of a model with a certain number of variables, the following function can be used.
+
+```{r}
+
+coef(best.model,8)
+
+```
+Forward and Backward Subset
+__________________________
+
+```{r}
+regfit.forward <- regsubsets(Salary~., data = Hitters, 
+                             nvmax = ncol(Hitters), method = "forward")
+
+regfit.backward <- regsubsets(Salary~., data = Hitters,
+                              nvmax = 20, method = "backward")
+
+summary(regfit.forward)
+```
+Now, we will use cross validation methods to estimate test error and subsequently identify the best model
+
+```{r}
+
+set.seed(1)
+train <- sample(263, 180)
+regfit.best <- regsubsets(Salary~., data = Hitters[train,],
+                          nvmax = 20)
+test.mat <- model.matrix(Salary~., data = Hitters[-train,])
+
+val.errors <- rep(NA, 19)
+for (i in 1:19){
+  coefi <- coef(regfit.best,id = i)
+  pred <- test.mat[,names(coefi)]%*%coefi
+  val.errors[i] <- mean((Hitters$Salary[-train]-pred)^2)
+  
+}
+
+which.min(val.errors)
+
+coef(regfit.best,11)
+
+```
+Since there is no predict() in regsubsets, we are making our own
+
+
+```{bash}
+predict.regsubsets <- function(object, newdata, id...){
+form <- as.formula(object[[2]])
+mat <- model.matrix(form,newdata)
+coefi <- coef(object, id)
+xvars = names(coefi)
+mat[,xvars]%*%ceofi
+}
+
+
+
+```
+

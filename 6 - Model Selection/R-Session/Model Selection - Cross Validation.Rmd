@@ -1,0 +1,71 @@
+---
+title: "Model Selection - Cross Validation"
+author: "Vineed"
+date: "2/29/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Model Selection by Cross-Validation
+-----------------------------------
+
+```{r}
+library(ISLR)
+library(MASS)
+
+set.seed(11)
+Hitters <- na.omit(Hitters)
+
+folds <- sample(rep(1:10, length = nrow(Hitters))) #assign numbers 1:10 and randomize it
+
+table(folds) #the folds are balanced
+cv.errors <- matrix(NA,10,19) #10row and 19 col
+```
+
+To refer :- 
+```{r}
+predict.regsubsets = function(object, newdata, id, ...) {
+    form = as.formula(object$call[[2]])
+    mat = model.matrix(form, newdata)
+    coefi = coef(object, id = id)
+    mat[, names(coefi)] %*% coefi
+}
+```
+
+
+```{r}
+for (k in 1:10) {
+    best.fit = regsubsets(Salary ~ ., data = Hitters[folds != k, ], nvmax = 19, 
+        method = "forward")
+    for (i in 1:19) {
+        pred = predict(best.fit, Hitters[folds == k, ], id = i)
+        cv.errors[k, i] = mean((Hitters$Salary[folds == k] - pred)^2)
+    }
+}
+
+rmse.cv <- sqrt(apply(cv.errors,2,mean))
+plot(rmse.cv, pch = 19, type = "b")
+```
+
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

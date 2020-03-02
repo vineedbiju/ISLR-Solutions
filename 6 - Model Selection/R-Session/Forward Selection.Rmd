@@ -1,0 +1,60 @@
+---
+title: "Forward Selection"
+author: "Vineed"
+date: "2/29/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+```{r}
+library(ISLR)
+library(leaps)
+Hitters <- na.omit(Hitters)
+```
+Removed the Missing Values
+
+```{r}
+forward.model <- regsubsets(Salary~., data = Hitters, 
+                            nvmax = 19, method = "forward")
+summary(forward.model)
+plot(forward.model, scale = "Cp")
+
+```
+Random Things Down
+```{r}
+forward.summary <- summary(forward.model)
+names(forward.summary)
+plot(forward.summary$cp)
+which.min(forward.summary$cp)
+points(10,forward.summary$cp[10], pch = 15, col = "blue")
+```
+
+Now Instead of the above method, we are going to use validation set to estimate the best model
+
+```{r}
+dim(Hitters)
+set.seed(1)
+train <- sample(seq(263), 180, replace = F)
+
+reg.fit <- regsubsets(Salary~., data = Hitters[train,], 
+                      nvmax = 19, method = "forward")
+
+```
+Now we are going to predict the value for the test data. From there we will calculate the Test MSE and plot it 
+
+
+```{r}
+val.errors = rep(NA, 19) #for 19 models
+x.test = model.matrix(Salary ~ ., data = Hitters[-train, ])
+
+for (i in 1:19) {
+  coefi <- coef(reg.fit,id = i) #i=1 selects model with 1 coefficient
+  pred <- x.test[,names(coefi)]%*%coefi
+  val.errors[i] <- mean((Hitters$Salary[-train]-pred)^2)
+  
+}
+plot(sqrt(val.errors),ylab = "Root MSE",ylim = c(200,400), pch = 19, type = "b")
+
+points(sqrt(reg.fit$rss[-1]/180), col = "blue", pch = 19, type = 'b')
+```
+

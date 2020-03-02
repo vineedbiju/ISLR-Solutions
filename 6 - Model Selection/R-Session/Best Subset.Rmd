@@ -1,0 +1,69 @@
+---
+title: "6. Model Selection"
+author: "Vineed"
+date: "2/29/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(ISLR)
+summary(Hitters)
+```
+There are missing values in Salary. Removing those
+
+```{r}
+Hitters <- na.omit(Hitters)
+sum(is.na(Hitters))
+
+```
+
+Best Subset Selection
+_______________________
+
+```{r}
+library(leaps)
+reg.model <- regsubsets(Salary~., data = Hitters)
+summary(reg.model)
+
+```
+Considers only max 8 variables.
+
+```{r}
+reg.model <-regsubsets(Salary~., data = Hitters, nvmax = ncol(Hitters))
+summary(reg.model)
+
+```
+
+Now let's save the summary
+
+```{r}
+reg.summary <- summary(reg.model)
+names(reg.summary)
+plot(reg.summary$cp)
+
+
+```
+Plotting the minimum value CP
+
+```{r}
+plot(reg.summary$cp)
+which.min(reg.summary$cp)
+points(10,reg.summary$cp[10],pch = 20, col = "red")
+
+```
+
+now, checking another plot method for cp
+
+```{r}
+plot(reg.model, scale = "Cp")
+```
+
+Here since 10-variable is the best model, getting the coefficients of the model are : -
+```{r}
+coef(reg.model,10)
+```
+
+
